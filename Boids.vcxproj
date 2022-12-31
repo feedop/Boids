@@ -98,10 +98,21 @@
     </CudaLink>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <CudaCompile Include="src\boidsGPU.cu" />
     <CudaCompile Include="src\main.cu" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\glad.c" />
+    <ClCompile Include="src\openGLsetup.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="src\boidsGPU.cuh" />
+    <ClInclude Include="src\defines.h" />
+    <ClInclude Include="src\openGLsetup.hpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Shaders\default.frag" />
+    <None Include="Shaders\default.vert" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
