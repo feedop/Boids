@@ -97,6 +97,7 @@ int main(int argc, char* argv[])
     return 0;
 }
 
+// Handle input arguments
 void handleInput(int argc, char* argv[], int& boidCount, bool& calculateOnCPU)
 {
     if (argc == 2)
@@ -153,6 +154,7 @@ void handleInput(int argc, char* argv[], int& boidCount, bool& calculateOnCPU)
     }
 }
 
+// OpenGL initialization and main loop
 template<bool calculateOnCPU>
 void eventLoop(GLFWwindow* window, const int boidCount)
 {
@@ -195,8 +197,7 @@ void eventLoop(GLFWwindow* window, const int boidCount)
         glClearColor(0.08f, 0.17f, 0.43f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
 
-        // Calculate new positions of boids in each frame
-
+        // Calculate new positions of boids in each frame using CUDA
         if constexpr (calculateOnCPU)
         {
 
@@ -215,7 +216,7 @@ void eventLoop(GLFWwindow* window, const int boidCount)
         // Swap front and back buffers 
         glfwSwapBuffers(window);
 
-        // Show FPS
+        // Show FPS in the title bar
         double currentTime = glfwGetTime();
         double delta = currentTime - lastTime;
         if (delta >= 1.0)

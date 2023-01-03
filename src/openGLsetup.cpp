@@ -7,6 +7,7 @@
 
 #include "defines.h"
 
+// Read a file into a string (used for compiling shaders)
 std::string getFileContent(const char* filename)
 {
     std::ifstream in(filename, std::ios::binary);
@@ -23,19 +24,22 @@ std::string getFileContent(const char* filename)
     throw errno;
 }
 
+// Read a shader, compile it adn return its id
 GLuint createShader(GLuint type, const std::string source)
 {
     const char* source_cstr = source.c_str();
     int result;
-    GLuint shader = glCreateShader(GL_VERTEX_SHADER);
+    GLuint shader = glCreateShader(type);
     glShaderSource(shader, 1, &source_cstr, NULL);
     glCompileShader(shader);
     glGetShaderiv(shader, GL_COMPILE_STATUS, &result);
+
+    // Error handling
     if (result == GL_FALSE)
     {
         int length;
         glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &length);
-        char* message = (char*)alloca(length * sizeof(char));
+        char* message = (char*)_malloca(length * sizeof(char));
         glGetShaderInfoLog(shader, length, &length, message);
         std::cout << "Failed to compile " << (type == GL_VERTEX_SHADER ? "vertex" : "fragment") << " shader" << std::endl;
         std::cout << message << std::endl;
@@ -45,31 +49,54 @@ GLuint createShader(GLuint type, const std::string source)
     return shader;
 }
 
+// Set up shaders and attach them to a new shader program, wchich is then linked
 void initializeShaders(GLuint& vertexShader, GLuint& fragmentShader, GLuint& shaderProgram)
 {
+    // Read vertex and fragment shaders
     std::string vertexSource = getFileContent(VERT_FILE);
     std::string fragmentSource = getFileContent(FRAG_FILE);
 
+    // Create shaders
     vertexShader = createShader(GL_VERTEX_SHADER, vertexSource);
     fragmentShader = createShader(GL_FRAGMENT_SHADER, fragmentSource);
 
+    // Create a shader program, attach the shaders to it nad then link it to gl
     shaderProgram = glCreateProgram();
     glAttachShader(shaderProgram, vertexShader);
     glAttachShader(shaderProgram, fragmentShader);
 
     glLinkProgram(shaderProgram);
 
+    // Error handling
+    int result;
+    glGetProgramiv(shaderProgram, GL_LINK_STATUS, &result);
+    if (result != GL_TRUE)
+    {
+        GLint length;
+        glGetProgramiv(shaderProgram, GL_INFO_LOG_LENGTH, &length);
+        char* message = (char*)_malloca(length * sizeof(char));
+        glGetProgramInfoLog(shaderProgram, length, &length, message);
+        std::cerr << "Failed to link the shader program!" << std::endl;
+        std::cerr << message << std::endl;
+    } 
+
+    // Delete unnecessary objects
     glDeleteShader(vertexShader);
     glDeleteShader(fragmentShader);
 }
 
+// create a VAO - the scene and VBO - the boid position buffer
 void initializeBuffer(GLuint* VAO, GLuint* VBO, const int boidCount)
 {
+    // Generate buffers
     glGenVertexArrays(1, VAO);
     glGenBuffers(1, VBO);
 
+    // Bind
     glBindVertexArray(*VAO);
     glBindBuffer(GL_ARRAY_BUFFER, *VBO);
+
+    // Set initial data to NULL - it will be filled up by CUDA
     glBufferData(GL_ARRAY_BUFFER, boidCount * 6 * sizeof(float), NULL, GL_DYNAMIC_DRAW);
 
     // Set vertex attribute layout

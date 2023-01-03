@@ -1,6 +1,5 @@
 #pragma once
 
-// MAX = 7168
 #define DEFAULT_BOIDCOUNT 10000
 
 #define WIDTH 1200
@@ -11,17 +10,17 @@
 #define VERT_FILE "Shaders/default.vert"
 #define FRAG_FILE "Shaders/default.frag"
 
-#define VISUAL_RANGE 0.1f
+#define VISUAL_RANGE 0.2f
 
-#define MARGIN 0.05f
-#define TURN_FACTOR 0.003f
+#define MARGIN 0.03f
+#define TURN_FACTOR 0.002f
 
-#define MIN_DISTANCE 0.012f
-#define SEPARATION_FACTOR 0.015f
+#define MIN_DISTANCE 0.013f
+#define SEPARATION_FACTOR 0.02f
 
-#define COHESION_FACTOR 0.002f;
+#define COHESION_FACTOR 0.001f;
 
-#define ALIGNMENT_FACTOR 0.005f;
+#define ALIGNMENT_FACTOR 0.008f;
 
-#define MIN_SPEED 0.002f
+#define MIN_SPEED 0.004f
 #define MAX_SPEED 0.015f
