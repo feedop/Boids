@@ -104,11 +104,13 @@
   <ItemGroup>
     <ClCompile Include="src\glad.c" />
     <ClCompile Include="src\openGLsetup.cpp" />
+    <ClCompile Include="src\parameterManager.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\boidsGPU.cuh" />
     <ClInclude Include="src\defines.h" />
     <ClInclude Include="src\openGLsetup.hpp" />
+    <ClInclude Include="src\parameterManager.hpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Shaders\default.frag" />

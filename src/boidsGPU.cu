@@ -2,6 +2,8 @@
 
 #include "cudaGL.h"
 #include "cuda_gl_interop.h"
+#include "cuda_runtime.h"
+#include "device_launch_parameters.h"
 
 #include <cstdio>
 #include <cstdlib>
@@ -29,9 +31,9 @@ namespace GPU
 		return sqrtf(x * x + y * y);
 	}
 
-	__device__ void createTrianglesFromPosition(const int id, float* devVBO, float X, float Y, float DX, float DY)
+	__device__ void createTrianglesFromPosition(const int id, float* devVBO, float X, float Y, float DX, float DY, const float boidSize)
 	{
-		float sizeCoefficient = BOID_SIZE / distance(DX, DY);
+		float sizeCoefficient = boidSize / distance(DX, DY);
 
 		devVBO[6 * id] = X + sizeCoefficient * DX;
 		devVBO[6 * id + 1] = Y + sizeCoefficient * DY;
@@ -64,7 +66,8 @@ namespace GPU
 	}
 
 	// 1. Avoid collisions with other boids
-	__device__ void separation(const float X, const float Y, float& DX, float& DY, float* boidsX, float* boidsY, const int id, const int boidCount)
+	__device__ void separation(const float X, const float Y, float& DX, float& DY, float* boidsX, float* boidsY, const int id, const int boidCount,
+		float minDistance, float separationFactor)
 	{
 		float moveX = 0;
 		float moveY = 0;
@@ -74,18 +77,19 @@ namespace GPU
 			float neighborX = boidsX[i];
 			float neighborY = boidsY[i];
 
-			if (distance(X - neighborX, Y - neighborY) < MIN_DISTANCE)
+			if (distance(X - neighborX, Y - neighborY) < minDistance)
 			{
 				moveX += X - neighborX;
 				moveY += Y - neighborY;
 			}
 		}
-		DX += moveX * SEPARATION_FACTOR;
-		DY += moveY * SEPARATION_FACTOR;
+		DX += moveX * separationFactor;
+		DY += moveY * separationFactor;
 	}
 
 	// 2. Steer towards the center of the flock (average position of nearby boids)
-	__device__ void cohesion(const float X, const float Y, float& DX, float& DY, float* boidsX, float* boidsY, const int id, const int boidCount)
+	__device__ void cohesion(const float X, const float Y, float& DX, float& DY, float* boidsX, float* boidsY, const int id, const int boidCount,
+		float visualRange, float cohesionFactor)
 	{
 		float moveX = 0;
 		float moveY = 0;
@@ -97,7 +101,7 @@ namespace GPU
 			float neighborX = boidsX[i];
 			float neighborY = boidsY[i];
 
-			if (distance(X - neighborX, Y - neighborY) < VISUAL_RANGE)
+			if (distance(X - neighborX, Y - neighborY) < visualRange)
 			{
 				moveX += neighborX;
 				moveY += neighborY;
@@ -110,12 +114,13 @@ namespace GPU
 			moveY /= neighbors;
 		}
 
-		DX += (moveX - X) * COHESION_FACTOR;
-		DY += (moveY - Y) * COHESION_FACTOR;
+		DX += (moveX - X) * cohesionFactor;
+		DY += (moveY - Y) * cohesionFactor;
 	}
 
-	// Kernel handling the "separation" and "alignment" steps of boid behavior
-	__global__ void boidSeparationCohesionKernel(float* boidX, float* boidY, float* boidDX, float* boidDY, const int boidCount)
+	// Kernel handling the "separation" and "cohesion" steps of boid behavior
+	__global__ void boidSeparationCohesionKernel(float* boidX, float* boidY, float* boidDX, float* boidDY, const int boidCount,
+		float minDistance, float visualRange, float separationFactor, float cohesionFactor)
 	{
 		int id = blockIdx.x * blockDim.x + threadIdx.x;
 		if (id >= boidCount)
@@ -128,10 +133,10 @@ namespace GPU
 		float DY = boidDY[id];
 
 		// 1. Separation - avoid each other at close range
-		separation(X, Y, DX, DY, boidX, boidY, id, boidCount);
+		separation(X, Y, DX, DY, boidX, boidY, id, boidCount, minDistance, separationFactor);
 
 		// 2. Cohesion - steer towards the center of the flock
-		cohesion(X, Y, DX, DY, boidX, boidY, id, boidCount);
+		cohesion(X, Y, DX, DY, boidX, boidY, id, boidCount, visualRange, cohesionFactor);
 
 		// Save calculated velocities to global memory
 		boidDX[id] = DX;
@@ -140,7 +145,8 @@ namespace GPU
 	}
 
 	// 3. Match velocity to the average of nearby boids
-	__device__ void alignment(const float X, const float Y, float& DX, float& DY, float* boidX, float* boidY, float* boidDX, float* boidDY, const int id, const int boidCount)
+	__device__ void alignment(const float X, const float Y, float& DX, float& DY, float* boidX, float* boidY, float* boidDX, float* boidDY, const int id,
+		const int boidCount, float visualRange, float alignmentFactor)
 	{
 		float avgDX = 0;
 		float avgDY = 0;
@@ -151,7 +157,7 @@ namespace GPU
 			float neighborY = boidY[i];
 
 			float dist = distance(X - neighborX, Y - neighborY);
-			if (dist < VISUAL_RANGE)
+			if (dist < visualRange)
 			{
 				avgDX += boidDX[i];
 				avgDY += boidDY[i];
@@ -164,7 +170,7 @@ namespace GPU
 			float neighborY = boidY[i];
 
 			float dist = distance(X - neighborX, Y - neighborY);
-			if (dist < VISUAL_RANGE)
+			if (dist < visualRange)
 			{
 				avgDX += boidDX[i];
 				avgDY += boidDY[i];
@@ -177,8 +183,8 @@ namespace GPU
 			avgDY /= neighbors;
 		}
 
-		DX += (avgDX - DX) * ALIGNMENT_FACTOR;
-		DY += (avgDY - DY) * ALIGNMENT_FACTOR;
+		DX += (avgDX - DX) * alignmentFactor;
+		DY += (avgDY - DY) * alignmentFactor;
 	}
 
 	// Make boids unable to go arbitrarily fast
@@ -218,9 +224,10 @@ namespace GPU
 		}
 	}
 
-	// Kernel handling the "cohesion" step of boid behavior as well as limiting the boid's speed and keeping it within the bounds of the window
+	// Kernel handling the "alignment" step of boid behavior as well as limiting the boid's speed and keeping it within the bounds of the window
 	// Additionally, the function creates triangles for OpenGL based on boid position and the direction of its velocity
-	__global__ void boidAlignmentKernel(float* devVBO, float* boidX, float* boidY, float* boidDX, float* boidDY, const int boidCount)
+	__global__ void boidAlignmentKernel(float* devVBO, float* boidX, float* boidY, float* boidDX, float* boidDY, const int boidCount,
+		float visualRange, float alignmentFactor, float boidSize)
 	{
 		int id = blockIdx.x * blockDim.x + threadIdx.x;
 		if (id >= boidCount)
@@ -232,7 +239,7 @@ namespace GPU
 		float DY = boidDY[id];
 
 		// 3. Alignment - match the average velocity of nearby boids
-		alignment(X, Y, DX, DY, boidX, boidY, boidDX, boidDY, id, boidCount);
+		alignment(X, Y, DX, DY, boidX, boidY, boidDX, boidDY, id, boidCount, visualRange, alignmentFactor);
 
 		// 4. Speed limit
 		speedLimit(DX, DY);
@@ -251,7 +258,7 @@ namespace GPU
 		boidY[id] = Y;
 
 		// Calculate triangle vertices for OpenGL
-		createTrianglesFromPosition(id, devVBO, X, Y, DX, DY);
+		createTrianglesFromPosition(id, devVBO, X, Y, DX, DY, boidSize);
 	}
 
 	// Allocate buffers for boid positions and velocities
@@ -272,7 +279,7 @@ namespace GPU
 		// Set up random seeds
 		curandState* devStates;
 		cudaMalloc(&devStates, boidCount * sizeof(curandState));
-		srand(time(0));
+		srand((unsigned int)time(0));
 		int seed = rand();
 		setupCurandStatesKernel << <blocks, threadsPerBlock >> > (devStates, seed, boidCount);
 
@@ -286,23 +293,25 @@ namespace GPU
 	}
 
 	// Calculate boid positions for the next frame
-	void calculatePositions(GLuint VBO, float* boidX, float* boidY, float* boidDX, float* boidDY, const int boidCount)
+	void calculatePositions(GLuint VBO, float* boidX, float* boidY, float* boidDX, float* boidDY, const int boidCount, const ParameterManager& parameterManager)
 	{
 		int threadsPerBlock = boidCount > 1024 ? 1024 : boidCount;
 		int blocks = (boidCount + threadsPerBlock - 1) / threadsPerBlock;		
 
-		// 1. Separation avoid each other,
+		// 1. Separation - avoid each other,
 		// 2. Cohesion - steer towards the center of the flock
-		boidSeparationCohesionKernel << <blocks, threadsPerBlock>> > (boidX, boidY, boidDX, boidDY, boidCount);
+		boidSeparationCohesionKernel << <blocks, threadsPerBlock>> > (boidX, boidY, boidDX, boidDY, boidCount,
+			parameterManager.minDistance, parameterManager.getVisualRange(), parameterManager.getSeparationFactor(), parameterManager.getCohesionFactor());
 
 		// Map VBO to CUDA
 		float* devVBO = 0;
 		cudaGLMapBufferObject((void**)&devVBO, VBO);
 
 		// 3. Alignment - match the average velocity of nearby boids,
-		// 4. Speed limit
+		// 4. Speed limit,
 		// 5. Keep within bounds
-		boidAlignmentKernel << <blocks, threadsPerBlock>> > (devVBO, boidX, boidY, boidDX, boidDY, boidCount);
+		boidAlignmentKernel << <blocks, threadsPerBlock>> > (devVBO, boidX, boidY, boidDX, boidDY, boidCount,
+			parameterManager.getVisualRange(), parameterManager.getAlignmentFactor(), parameterManager.boidSize);
 		
 		cudaGLUnmapBufferObject(VBO);
 	}

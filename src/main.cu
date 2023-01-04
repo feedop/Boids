@@ -3,6 +3,7 @@
 
 #include "boidsGPU.cuh"
 #include "openGLsetup.hpp"
+#include "parameterManager.hpp"
 #include "defines.h"
 
 #include <glad/glad.h>
@@ -190,6 +191,8 @@ void eventLoop(GLFWwindow* window, const int boidCount)
     int frameCount = 0;
     int seconds = 0;
 
+    ParameterManager parameterManager(boidCount);
+
     // Loop until the user closes the window 
     while (!glfwWindowShouldClose(window))
     {
@@ -204,7 +207,7 @@ void eventLoop(GLFWwindow* window, const int boidCount)
         }
         else
         {
-            GPU::calculatePositions(VBO, boidX, boidY, boidDX, boidDY, boidCount);
+            GPU::calculatePositions(VBO, boidX, boidY, boidDX, boidDY, boidCount, parameterManager);
         }
 
         // Render triangles
