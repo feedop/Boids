@@ -13,17 +13,6 @@
 
 #include "defines.h"
 
-static void HandleError(cudaError_t err, const char* file, int line)
-{
-	if (err != cudaSuccess)
-	{
-		printf("%s in %s at line %d\n", cudaGetErrorString(err),
-			file, line);
-		exit(EXIT_FAILURE);
-	}
-}
-#define HANDLE_ERROR( err ) (HandleError( err, __FILE__, __LINE__ ))
-
 namespace GPU
 {
 	__device__ inline float distance(const float x, const float y)
@@ -271,7 +260,7 @@ namespace GPU
 	}
 
 	// Generate initial positions and velocities of boids
-	void generateRandomPositions(GLuint VBO, float* boidX, float* boidY, float* boidDX, float* boidDY, const int boidCount)
+	void generateRandomPositions(cudaGraphicsResource_t* resource, float* boidX, float* boidY, float* boidDX, float* boidDY, const int boidCount)
 	{
 		int threadsPerBlock = boidCount > 1024 ? 1024 : boidCount;
 		int blocks = (boidCount + threadsPerBlock - 1) / threadsPerBlock;
@@ -285,15 +274,18 @@ namespace GPU
 
 		// Generate random positions and velocity vectors
 		float* devVBO = 0;
-		cudaGLMapBufferObject((void**)&devVBO, VBO);
+		size_t numBytes;
 
+		HANDLE_ERROR(cudaGraphicsMapResources(1, resource, 0));
+		HANDLE_ERROR(cudaGraphicsResourceGetMappedPointer((void**)&devVBO, &numBytes, *resource));
+		
 		generateRandomPositionsKernel << <blocks, threadsPerBlock >> > (devStates, devVBO, boidX, boidY, boidDX, boidDY, boidCount);
 
-		cudaGLUnmapBufferObject(VBO);
+		HANDLE_ERROR(cudaGraphicsUnmapResources(1, resource, 0));
 	}
 
 	// Calculate boid positions for the next frame
-	void calculatePositions(GLuint VBO, float* boidX, float* boidY, float* boidDX, float* boidDY, const int boidCount, const ParameterManager& parameterManager)
+	void calculatePositions(cudaGraphicsResource_t* resource, float* boidX, float* boidY, float* boidDX, float* boidDY, const int boidCount, const ParameterManager& parameterManager)
 	{
 		int threadsPerBlock = boidCount > 1024 ? 1024 : boidCount;
 		int blocks = (boidCount + threadsPerBlock - 1) / threadsPerBlock;		
@@ -305,7 +297,10 @@ namespace GPU
 
 		// Map VBO to CUDA
 		float* devVBO = 0;
-		cudaGLMapBufferObject((void**)&devVBO, VBO);
+		size_t numBytes;
+
+		HANDLE_ERROR(cudaGraphicsMapResources(1, resource, 0));
+		HANDLE_ERROR(cudaGraphicsResourceGetMappedPointer((void**)&devVBO, &numBytes, *resource));
 
 		// 3. Alignment - match the average velocity of nearby boids,
 		// 4. Speed limit,
@@ -313,6 +308,6 @@ namespace GPU
 		boidAlignmentKernel << <blocks, threadsPerBlock>> > (devVBO, boidX, boidY, boidDX, boidDY, boidCount,
 			parameterManager.getVisualRange(), parameterManager.getAlignmentFactor(), parameterManager.boidSize);
 		
-		cudaGLUnmapBufferObject(VBO);
+		HANDLE_ERROR(cudaGraphicsUnmapResources(1, resource, 0));
 	}
 }

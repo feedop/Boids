@@ -48,7 +48,7 @@ int main(int argc, char* argv[])
 
     handleInput(argc, argv, boidCount, calculateOnCPU);
     
-    cudaStatus = cudaGLSetGLDevice(0);
+    cudaStatus = cudaSetDevice(0);
     if (cudaStatus != cudaSuccess)
     {
         fprintf(stderr, "cudaSetDevice failed!  Do you have a CUDA-capable GPU installed?");
@@ -166,6 +166,8 @@ void handleInput(int argc, char* argv[], int& boidCount, bool& calculateOnCPU)
 template<bool calculateOnCPU>
 void eventLoop(GLFWwindow* window, const int boidCount)
 {
+    cudaGraphicsResource_t resource;
+
     // Set up Shaders
     GLuint vertexShader, fragmentShader, shaderProgram;
     initializeShaders(vertexShader, fragmentShader, shaderProgram);
@@ -189,9 +191,9 @@ void eventLoop(GLFWwindow* window, const int boidCount)
     }
     else
     {
-        cudaGLRegisterBufferObject(VBO);
+        HANDLE_ERROR(cudaGraphicsGLRegisterBuffer(&resource, VBO, cudaGraphicsRegisterFlagsNone));
         GPU::initializeBoidLists(&boidX, &boidY, &boidDX, &boidDY, boidCount);
-        GPU::generateRandomPositions(VBO, boidX, boidY, boidDX, boidDY, boidCount);
+        GPU::generateRandomPositions(&resource, boidX, boidY, boidDX, boidDY, boidCount);
     }    
 
     double lastTime = glfwGetTime();
@@ -221,7 +223,7 @@ void eventLoop(GLFWwindow* window, const int boidCount)
         }
         else
         {
-            GPU::calculatePositions(VBO, boidX, boidY, boidDX, boidDY, boidCount, parameterManager);
+            GPU::calculatePositions(&resource, boidX, boidY, boidDX, boidDY, boidCount, parameterManager);
         }
 
         // Render triangles
@@ -266,7 +268,7 @@ void eventLoop(GLFWwindow* window, const int boidCount)
     }
     else
     {
-        cudaGLUnregisterBufferObject(VBO);
+        cudaGraphicsUnregisterResource(resource);
         cudaFree(boidX);
         cudaFree(boidY);
         cudaFree(boidDX);
