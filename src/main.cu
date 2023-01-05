@@ -2,6 +2,7 @@
 #include "device_launch_parameters.h"
 
 #include "boidsGPU.cuh"
+#include "boidsCPU.hpp"
 #include "openGLsetup.hpp"
 #include "parameterManager.hpp"
 #include "defines.h"
@@ -25,8 +26,6 @@ void handleInput(int argc, char* argv[], int& boidCount, bool& calculateOnCPU);
 template<bool calculateOnCPU>
 void eventLoop(GLFWwindow* window, const int boidCount);
 
-void initializeBuffer(GLuint* VAO, GLuint* VBO, const int boidCount);
-
 void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods);
 
 void printParameters(const ParameterManager* parameterManager);
@@ -36,14 +35,14 @@ void Clear();
 
 void usage()
 {
-    std::cout << "USAGE: ./Boids [boidCount] [-c]\n";
+    std::cout << "USAGE: ./Boids [-c] [boidCount]\n";
     exit(0);
 }
 
 int main(int argc, char* argv[])
 {
     int boidCount;
-    bool calculateOnCPU = false;
+    bool calculateOnCPU = true;
     cudaError_t cudaStatus;
 
     handleInput(argc, argv, boidCount, calculateOnCPU);
@@ -167,6 +166,7 @@ template<bool calculateOnCPU>
 void eventLoop(GLFWwindow* window, const int boidCount)
 {
     cudaGraphicsResource_t resource;
+    float* cpuVBO;
 
     // Set up Shaders
     GLuint vertexShader, fragmentShader, shaderProgram;
@@ -174,8 +174,7 @@ void eventLoop(GLFWwindow* window, const int boidCount)
 
     // Initialize vertex buffer
     GLuint VAO, VBO;
-    
-    initializeBuffer(&VAO, &VBO, boidCount);
+
 
     // Boid positions
     float* boidX = 0;
@@ -187,13 +186,19 @@ void eventLoop(GLFWwindow* window, const int boidCount)
     // Fill the initial array with random values
     if constexpr (calculateOnCPU)
     {
+        initializeBuffer(&VAO, &VBO, boidCount);
 
+        CPU::initializeBoidLists(&cpuVBO, &boidX, &boidY, &boidDX, &boidDY, boidCount);
+        CPU::generateRandomPositions(boidX, boidY, boidDX, boidDY, boidCount);  
     }
     else
     {
-        HANDLE_ERROR(cudaGraphicsGLRegisterBuffer(&resource, VBO, cudaGraphicsRegisterFlagsNone));
+        initializeBuffer(&VAO, &VBO, boidCount);
+
         GPU::initializeBoidLists(&boidX, &boidY, &boidDX, &boidDY, boidCount);
-        GPU::generateRandomPositions(&resource, boidX, boidY, boidDX, boidDY, boidCount);
+        GPU::generateRandomPositions(boidX, boidY, boidDX, boidDY, boidCount);
+
+        HANDLE_ERROR(cudaGraphicsGLRegisterBuffer(&resource, VBO, cudaGraphicsRegisterFlagsNone));
     }    
 
     double lastTime = glfwGetTime();
@@ -216,10 +221,14 @@ void eventLoop(GLFWwindow* window, const int boidCount)
         glClearColor(0.08f, 0.17f, 0.43f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
 
+        // Bind triangle vertices
+        glBindVertexArray(VAO);
+        glBindBuffer(GL_ARRAY_BUFFER, VBO);
+
         // Calculate new positions of boids in each frame using CUDA
         if constexpr (calculateOnCPU)
         {
-
+            CPU::calculatePositions(cpuVBO, boidX, boidY, boidDX, boidDY, boidCount, parameterManager);
         }
         else
         {
@@ -228,8 +237,6 @@ void eventLoop(GLFWwindow* window, const int boidCount)
 
         // Render triangles
         glUseProgram(shaderProgram);
-        glBindVertexArray(VAO);
-
         glDrawArrays(GL_TRIANGLES, 0, boidCount * 3);
 
         // Swap front and back buffers 
@@ -264,7 +271,11 @@ void eventLoop(GLFWwindow* window, const int boidCount)
 
     if constexpr (calculateOnCPU)
     {
-
+        free(cpuVBO);
+        free(boidX);
+        free(boidY);
+        free(boidDX);
+        free(boidDY);
     }
     else
     {

@@ -42,7 +42,7 @@ namespace GPU
 		curand_init(seed, id, 0, &states[id]);
 	}
 
-	__global__ void generateRandomPositionsKernel(curandState* states, float* devVBO, float* boidX, float* boidY, float* boidDX, float* boidDY, const int boidCount)
+	__global__ void generateRandomPositionsKernel(curandState* states, float* boidX, float* boidY, float* boidDX, float* boidDY, const int boidCount)
 	{
 		int id = blockIdx.x * blockDim.x + threadIdx.x;
 		if (id >= boidCount)
@@ -55,16 +55,16 @@ namespace GPU
 	}
 
 	// 1. Avoid collisions with other boids
-	__device__ void separation(const float X, const float Y, float& DX, float& DY, float* boidsX, float* boidsY, const int id, const int boidCount,
+	__device__ void separation(const float X, const float Y, float& DX, float& DY, float* boidX, float* boidY, const int id, const int boidCount,
 		float minDistance, float separationFactor)
 	{
 		float moveX = 0;
 		float moveY = 0;
-		// Loop starting on our own id for better coalescing
+
 		for (int i = 0; i < boidCount; i++)
 		{
-			float neighborX = boidsX[i];
-			float neighborY = boidsY[i];
+			float neighborX = boidX[i];
+			float neighborY = boidY[i];
 
 			if (distance(X - neighborX, Y - neighborY) < minDistance)
 			{
@@ -77,7 +77,7 @@ namespace GPU
 	}
 
 	// 2. Steer towards the center of the flock (average position of nearby boids)
-	__device__ void cohesion(const float X, const float Y, float& DX, float& DY, float* boidsX, float* boidsY, const int id, const int boidCount,
+	__device__ void cohesion(const float X, const float Y, float& DX, float& DY, float* boidX, float* boidY, const int id, const int boidCount,
 		float visualRange, float cohesionFactor)
 	{
 		float moveX = 0;
@@ -87,8 +87,8 @@ namespace GPU
 		{
 			if (i == id)
 				continue;
-			float neighborX = boidsX[i];
-			float neighborY = boidsY[i];
+			float neighborX = boidX[i];
+			float neighborY = boidY[i];
 
 			if (distance(X - neighborX, Y - neighborY) < visualRange)
 			{
@@ -260,7 +260,7 @@ namespace GPU
 	}
 
 	// Generate initial positions and velocities of boids
-	void generateRandomPositions(cudaGraphicsResource_t* resource, float* boidX, float* boidY, float* boidDX, float* boidDY, const int boidCount)
+	void generateRandomPositions(float* boidX, float* boidY, float* boidDX, float* boidDY, const int boidCount)
 	{
 		int threadsPerBlock = boidCount > 1024 ? 1024 : boidCount;
 		int blocks = (boidCount + threadsPerBlock - 1) / threadsPerBlock;
@@ -275,13 +275,10 @@ namespace GPU
 		// Generate random positions and velocity vectors
 		float* devVBO = 0;
 		size_t numBytes;
-
-		HANDLE_ERROR(cudaGraphicsMapResources(1, resource, 0));
-		HANDLE_ERROR(cudaGraphicsResourceGetMappedPointer((void**)&devVBO, &numBytes, *resource));
 		
-		generateRandomPositionsKernel << <blocks, threadsPerBlock >> > (devStates, devVBO, boidX, boidY, boidDX, boidDY, boidCount);
+		generateRandomPositionsKernel << <blocks, threadsPerBlock >> > (devStates, boidX, boidY, boidDX, boidDY, boidCount);
 
-		HANDLE_ERROR(cudaGraphicsUnmapResources(1, resource, 0));
+		cudaFree(devStates);
 	}
 
 	// Calculate boid positions for the next frame

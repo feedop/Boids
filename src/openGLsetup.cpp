@@ -16,6 +16,22 @@ std::string getFileContent(const char* filename)
         in.close();
         return contents;
     }
+    else // fallback 
+    {
+        char fallbackFilename[128];
+        sprintf_s(fallbackFilename, "../../%s", filename);
+        std::ifstream in(fallbackFilename, std::ios::binary);
+        if (in)
+        {
+            std::string contents;
+            in.seekg(0, std::ios::end);
+            contents.resize(in.tellg());
+            in.seekg(0, std::ios::beg);
+            in.read(&contents[0], contents.size());
+            in.close();
+            return contents;
+        }
+    }
     throw std::system_error(errno, std::generic_category(), filename);
 }
 
@@ -101,8 +117,8 @@ void initializeBuffer(GLuint* VAO, GLuint* VBO, const int boidCount)
     glBindVertexArray(*VAO);
     glBindBuffer(GL_ARRAY_BUFFER, *VBO);
 
-    // Set initial data to NULL - it will be filled up by CUDA
-    glBufferData(GL_ARRAY_BUFFER, boidCount * 6 * sizeof(float), NULL, GL_DYNAMIC_DRAW);
+    // Set initial data to NULL - it will be filled later
+    glBufferData(GL_ARRAY_BUFFER, 6 * boidCount * sizeof(float), NULL, GL_STREAM_DRAW);
 
     // Set vertex attribute layout
     glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), 0);

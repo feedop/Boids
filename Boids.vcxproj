@@ -102,11 +102,13 @@
     <CudaCompile Include="src\main.cu" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="src\boidsCPU.cpp" />
     <ClCompile Include="src\glad.c" />
     <ClCompile Include="src\openGLsetup.cpp" />
     <ClCompile Include="src\parameterManager.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\boidsCPU.hpp" />
     <ClInclude Include="src\boidsGPU.cuh" />
     <ClInclude Include="src\defines.h" />
     <ClInclude Include="src\openGLsetup.hpp" />
