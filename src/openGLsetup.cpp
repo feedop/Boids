@@ -1,10 +1,5 @@
 #include "openGLsetup.hpp"
 
-#include <fstream>
-#include <sstream>
-#include <cerrno>
-#include <iostream>
-
 #include "defines.h"
 
 // Read a file into a string (used for compiling shaders)
@@ -21,7 +16,7 @@ std::string getFileContent(const char* filename)
         in.close();
         return contents;
     }
-    throw errno;
+    throw std::system_error(errno, std::generic_category(), filename);
 }
 
 // Read a shader, compile it adn return its id
@@ -53,8 +48,18 @@ GLuint createShader(GLuint type, const std::string source)
 void initializeShaders(GLuint& vertexShader, GLuint& fragmentShader, GLuint& shaderProgram)
 {
     // Read vertex and fragment shaders
-    std::string vertexSource = getFileContent(VERT_FILE);
-    std::string fragmentSource = getFileContent(FRAG_FILE);
+    std::string vertexSource;
+    std::string fragmentSource;
+    try
+    {
+        vertexSource = getFileContent(VERT_FILE);
+        fragmentSource = getFileContent(FRAG_FILE);
+    }
+    catch (std::system_error& error)
+    {
+        std::cout << "Error reading shader files. " << error.what() << std::endl;
+        exit(1);
+    }
 
     // Create shaders
     vertexShader = createShader(GL_VERTEX_SHADER, vertexSource);

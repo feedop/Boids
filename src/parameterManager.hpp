@@ -1,6 +1,9 @@
 #pragma once
+#include <string>
+
 #include "defines.h"
 
+// This class stores the values of basic boid behavior parameters and manages increasing/descreasing them
 class ParameterManager
 {
 private:
@@ -9,8 +12,10 @@ private:
 	float cohesionFactor = INITIAL_COHESION_FACTOR;
 	float alignmentFactor = INITIAL_ALIGNMENT_FACTOR;
 
-	void incrementParameter(float& field, const float minValue, const float maxValue);
-	void decrementParameter(float& field, const float minValue, const float maxValue);
+	float* selectedParameter = &visualRange;
+	float minValue = MIN_VISUAL_RANGE;
+	float maxValue = MAX_VISUAL_RANGE;
+	std::string selectedName = "Visual Range";
 
 public:
 	const float boidSize;
@@ -18,15 +23,13 @@ public:
 
 	ParameterManager(const int boidCount);
 
-	void incrementVisualRange();
-	void incrementSeparationFactor();
-	void incrementCohesionFactor();
-	void incrementAlignmentFactor();
+	void incrementParameter();
+	void decrementParameter();
 
-	void decrementVisualRange();
-	void decrementSeparationFactor();
-	void decrementCohesionFactor();
-	void decrementAlignmentFactor();
+	void selectVisualRange();
+	void selectSeparationFactor();
+	void selectCohesionFactor();
+	void selectAlignmentFactor();
 
 	float getVisualRange() const
 	{
@@ -46,5 +49,10 @@ public:
 	float getAlignmentFactor() const
 	{
 		return alignmentFactor;
+	}
+
+	std::string getSelectedName() const
+	{
+		return selectedName;
 	}
 };

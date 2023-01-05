@@ -279,7 +279,7 @@ namespace GPU
 		// Set up random seeds
 		curandState* devStates;
 		cudaMalloc(&devStates, boidCount * sizeof(curandState));
-		srand((unsigned int)time(0));
+		srand(static_cast<unsigned int>(time(0)));
 		int seed = rand();
 		setupCurandStatesKernel << <blocks, threadsPerBlock >> > (devStates, seed, boidCount);
 

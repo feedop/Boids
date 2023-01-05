@@ -1,70 +1,63 @@
 #include "parameterManager.hpp"
 
-void ParameterManager::incrementParameter(float& parameter, const float minValue, const float maxValue)
+void ParameterManager::incrementParameter()
 {
 	float step = (maxValue - minValue) / STEPS;
-	if (parameter + step > maxValue)
+	if (*selectedParameter + step > maxValue)
 	{
-		parameter = maxValue;
+		*selectedParameter = maxValue;
 	}
 	else
 	{
-		parameter += step;
+		*selectedParameter += step;
 	}
 }
 
-void ParameterManager::decrementParameter(float& parameter, const float minValue, const float maxValue)
+void ParameterManager::decrementParameter()
 {
 	float step = (maxValue - minValue) / STEPS;
-	if (parameter - step < minValue)
+	if (*selectedParameter - step < minValue)
 	{
-		parameter = minValue;
+		*selectedParameter = minValue;
 	}
 	else
 	{
-		parameter -= step;
+		*selectedParameter -= step;
 	}
 }
 
-ParameterManager::ParameterManager(const int boidCount) : boidSize(boidCount <= BOID_SIZE_THRESHHOLD ? LARGE_BOID_SIZE : SMALL_BOID_SIZE), minDistance(boidSize * 1.5)
+ParameterManager::ParameterManager(const int boidCount) : boidSize(boidCount <= BOID_SIZE_THRESHHOLD ? LARGE_BOID_SIZE : SMALL_BOID_SIZE), minDistance(boidSize * 1.5f)
 {}
 
-void ParameterManager::incrementVisualRange()
+void ParameterManager::selectVisualRange()
 {
-	incrementParameter(visualRange, MIN_VISUAL_RANGE, MAX_VISUAL_RANGE);
+	selectedParameter = &visualRange;
+	minValue = MIN_VISUAL_RANGE;
+	maxValue = MAX_VISUAL_RANGE;
+	selectedName = VISUAL_RANGE_NAME;
 }
 
-void ParameterManager::incrementSeparationFactor()
+void ParameterManager::selectSeparationFactor()
 {
-	incrementParameter(separationFactor, MIN_SEPARATION_FACTOR, MAX_SEPARATION_FACTOR);
+	selectedParameter = &separationFactor;
+	minValue = MIN_SEPARATION_FACTOR;
+	maxValue = MAX_SEPARATION_FACTOR;
+	selectedName = SEPARATION_FACTOR_NAME;
 }
 
-void ParameterManager::incrementCohesionFactor()
+void ParameterManager::selectCohesionFactor()
 {
-	incrementParameter(cohesionFactor, MIN_COHESION_FACTOR, MAX_COHESION_FACTOR);
+	selectedParameter = &cohesionFactor;
+	minValue = MIN_COHESION_FACTOR;
+	maxValue = MAX_COHESION_FACTOR;
+	selectedName = COHESION_FACTOR_NAME;
 }
 
-void ParameterManager::incrementAlignmentFactor()
+void ParameterManager::selectAlignmentFactor()
 {
-	incrementParameter(alignmentFactor, MIN_ALIGNMENT_FACTOR, MAX_ALIGNMENT_FACTOR);
+	selectedParameter = &alignmentFactor;
+	minValue = MIN_ALIGNMENT_FACTOR;
+	maxValue = MAX_ALIGNMENT_FACTOR;
+	selectedName = ALIGNMENT_FACTOR_NAME;
 }
 
-void ParameterManager::decrementVisualRange()
-{
-	decrementParameter(visualRange, MIN_VISUAL_RANGE, MAX_VISUAL_RANGE);
-}
-
-void ParameterManager::decrementSeparationFactor()
-{
-	decrementParameter(separationFactor, MIN_SEPARATION_FACTOR, MAX_SEPARATION_FACTOR);
-}
-
-void ParameterManager::decrementCohesionFactor()
-{
-	decrementParameter(cohesionFactor, MIN_COHESION_FACTOR, MAX_COHESION_FACTOR);
-}
-
-void ParameterManager::decrementAlignmentFactor()
-{
-	decrementParameter(alignmentFactor, MIN_ALIGNMENT_FACTOR, MAX_ALIGNMENT_FACTOR);
-}

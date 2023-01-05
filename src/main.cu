@@ -27,6 +27,13 @@ void eventLoop(GLFWwindow* window, const int boidCount);
 
 void initializeBuffer(GLuint* VAO, GLuint* VBO, const int boidCount);
 
+void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods);
+
+void printParameters(const ParameterManager* parameterManager);
+
+void Clear();
+
+
 void usage()
 {
     std::cout << "USAGE: ./Boids [boidCount] [-c]\n";
@@ -193,6 +200,13 @@ void eventLoop(GLFWwindow* window, const int boidCount)
 
     ParameterManager parameterManager(boidCount);
 
+    // Set key callbacks
+    glfwSetWindowUserPointer(window, static_cast<void*>(&parameterManager));
+    glfwSetKeyCallback(window, keyCallback);
+
+    // Print initial parameters
+    printParameters(&parameterManager);
+
     // Loop until the user closes the window 
     while (!glfwWindowShouldClose(window))
     {
@@ -253,11 +267,75 @@ void eventLoop(GLFWwindow* window, const int boidCount)
     else
     {
         cudaGLUnregisterBufferObject(VBO);
+        cudaFree(boidX);
+        cudaFree(boidY);
+        cudaFree(boidDX);
+        cudaFree(boidDY);
     }
 
     glDeleteVertexArrays(1, &VAO);
     glDeleteBuffers(1, &VBO);
     glDeleteProgram(shaderProgram);
 }
+
+void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods)
+{
+    ParameterManager* parameterManager = static_cast<ParameterManager*>(glfwGetWindowUserPointer(window));
+    if (action == GLFW_PRESS)
+    {
+        switch (key)
+        {
+        case GLFW_KEY_V:
+            parameterManager->selectVisualRange();
+            printParameters(parameterManager);
+            break;
+        case GLFW_KEY_S:
+            parameterManager->selectSeparationFactor();
+            printParameters(parameterManager);
+            break;
+        case GLFW_KEY_C:
+            parameterManager->selectCohesionFactor();
+            printParameters(parameterManager);
+            break;
+        case GLFW_KEY_A:
+            parameterManager->selectAlignmentFactor();
+            printParameters(parameterManager);
+            break;
+        case GLFW_KEY_UP:
+            parameterManager->incrementParameter();
+            printParameters(parameterManager);
+            break;
+        case GLFW_KEY_DOWN:
+            parameterManager->decrementParameter();
+            printParameters(parameterManager);
+            break;
+        }
+    }
+}
+
+// prints the values of parameters to console
+void printParameters(const ParameterManager* parameterManager)
+{
+    Clear();
+    std::cout << "Selected Parameter: " << parameterManager->getSelectedName() << std::endl <<
+        VISUAL_RANGE_NAME << ": " << parameterManager->getVisualRange() << std::endl <<
+        SEPARATION_FACTOR_NAME << ": " << parameterManager->getSeparationFactor() << std::endl <<
+        COHESION_FACTOR_NAME << ": " << parameterManager->getCohesionFactor() << std::endl <<
+        ALIGNMENT_FACTOR_NAME << ": " << parameterManager->getAlignmentFactor() << std::endl;
+}
+
+
+// Clears the terminal
+void Clear()
+{
+#if defined _WIN32
+    system("cls");
+#elif defined (__LINUX__) || defined(__gnu_linux__) || defined(__linux__)
+    std::cout<< u8"\033[2J\033[1;1H"; // Using ANSI Escape Sequences 
+#elif defined (__APPLE__)
+    system("clear");
+#endif
+}
+
 
 
