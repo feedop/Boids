@@ -32,7 +32,6 @@ void printParameters(const ParameterManager* parameterManager);
 
 void Clear();
 
-
 void usage()
 {
     std::cout << "USAGE: ./Boids [-c] [boidCount]\n";
@@ -42,7 +41,7 @@ void usage()
 int main(int argc, char* argv[])
 {
     int boidCount;
-    bool calculateOnCPU = true;
+    bool calculateOnCPU = false;
     cudaError_t cudaStatus;
 
     handleInput(argc, argv, boidCount, calculateOnCPU);
@@ -265,17 +264,23 @@ void eventLoop(GLFWwindow* window, const int boidCount)
 
         // Poll for and process events
         glfwPollEvents();
+
+        // When paused, wait for events (avoid busy waiting)
+        while (parameterManager.getPauseStatus() == true)
+        {
+            glfwWaitEvents();
+        }
     }
 
     // Cleanup
 
     if constexpr (calculateOnCPU)
     {
-        free(cpuVBO);
-        free(boidX);
-        free(boidY);
-        free(boidDX);
-        free(boidDY);
+        delete cpuVBO;
+        delete boidX;
+        delete boidY;
+        delete boidDX;
+        delete boidDY;
     }
     else
     {
@@ -322,6 +327,9 @@ void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods
             parameterManager->decrementParameter();
             printParameters(parameterManager);
             break;
+        case GLFW_KEY_SPACE:
+            parameterManager->pause();
+            break;
         }
     }
 }
@@ -336,7 +344,6 @@ void printParameters(const ParameterManager* parameterManager)
         COHESION_FACTOR_NAME << ": " << parameterManager->getCohesionFactor() << std::endl <<
         ALIGNMENT_FACTOR_NAME << ": " << parameterManager->getAlignmentFactor() << std::endl;
 }
-
 
 // Clears the terminal
 void Clear()

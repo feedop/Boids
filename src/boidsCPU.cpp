@@ -35,12 +35,12 @@ namespace CPU
 
 	void initializeBoidLists(float** cpuVBO, float** boidX, float** boidY, float** boidDX, float** boidDY, const int boidCount)
 	{
-		*cpuVBO = static_cast<float*>(malloc(6 * boidCount * sizeof(float)));
+		*cpuVBO = new float[6 * boidCount];
 
-		*boidX = static_cast<float*>(malloc(boidCount * sizeof(float)));
-		*boidY = static_cast<float*>(malloc(boidCount * sizeof(float)));
-		*boidDX = static_cast<float*>(malloc(boidCount * sizeof(float)));
-		*boidDY = static_cast<float*>(malloc(boidCount * sizeof(float)));
+		*boidX = new float[boidCount];
+		*boidY = new float[boidCount];
+		*boidDX = new float[boidCount];
+		*boidDY = new float[boidCount];
 	}
 
 	void generateRandomPositions(float* boidX, float* boidY, float* boidDX, float* boidDY, const int boidCount)
@@ -64,7 +64,7 @@ namespace CPU
 		for (int i = 0; i < boidCount; i++)
 		{
 			float X = boidX[i];
-			float Y = boidX[i];
+			float Y = boidY[i];
 			float moveX = 0;
 			float moveY = 0;
 			for (int j = 0; j < boidCount; j++)
@@ -89,7 +89,7 @@ namespace CPU
 		for (int i = 0; i < boidCount; i++)
 		{
 			float X = boidX[i];
-			float Y = boidX[i];
+			float Y = boidY[i];
 			float moveX = 0;
 			float moveY = 0;
 			int neighbors = 0;
@@ -119,10 +119,16 @@ namespace CPU
 	// 3. Match velocity to the average of nearby boids
 	void alignment(float* boidX, float* boidY, float* boidDX, float* boidDY, const int boidCount, float visualRange, float alignmentFactor)
 	{
+		float* tempDX = new float[boidCount]();
+		float* tempDY = new float[boidCount]();
+
 		for (int i = 0; i < boidCount; i++)
 		{
 			float X = boidX[i];
-			float Y = boidX[i];
+			float Y = boidY[i];
+			float DX = boidDX[i];
+			float DY = boidDY[i];
+
 			float avgDX = 0;
 			float avgDY = 0;
 			int neighbors = 0;
@@ -144,9 +150,19 @@ namespace CPU
 				avgDY /= neighbors;
 			}
 
-			boidDX[i] += (avgDX - X) * alignmentFactor;
-			boidDY[i] += (avgDY - Y) * alignmentFactor;
+			tempDX[i] += (avgDX - DX) * alignmentFactor;
+			tempDY[i] += (avgDY - DY) * alignmentFactor;
 		}
+
+		// Update velocities from temp array
+		for (int i = 0; i < boidCount; i++)
+		{
+			boidDX[i] += tempDX[i];
+			boidDY[i] += tempDY[i];
+		}
+
+		delete[] tempDX;
+		delete[] tempDY;
 	}
 
 	// Make boids unable to go arbitrarily fast
@@ -197,7 +213,7 @@ namespace CPU
 		float visualRange = parameterManager.getVisualRange();
 
 		// 1. Separation - avoid each other at close range
-		separation(boidX, boidY, boidDX, boidDY,boidCount, parameterManager.minDistance, visualRange, parameterManager.getSeparationFactor());
+		separation(boidX, boidY, boidDX, boidDY, boidCount, parameterManager.minDistance, visualRange, parameterManager.getSeparationFactor());
 
 		// 2. Cohesion - steer towards the center of the flock
 		cohesion(boidX, boidY, boidDX, boidDY, boidCount, visualRange, parameterManager.getCohesionFactor());
@@ -211,13 +227,15 @@ namespace CPU
 		// 5. Keep within bounds
 		keepWithinBounds(boidX, boidY, boidDX, boidDY, boidCount);
 
-		// Update positions
+		// Update
 		for (int i = 0; i < boidCount; i++)
 		{
 			boidX[i] += boidDX[i];
 			boidY[i] += boidDY[i];
 		}
+
 		// Create traingles for OpenGL
 		createTrianglesFromPosition(cpuVBO, boidX, boidY, boidDX, boidDY, boidCount, parameterManager.boidSize);
+
 	}
 }

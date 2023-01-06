@@ -29,6 +29,11 @@ void ParameterManager::decrementParameter()
 ParameterManager::ParameterManager(const int boidCount) : boidSize(boidCount <= BOID_SIZE_THRESHHOLD ? LARGE_BOID_SIZE : SMALL_BOID_SIZE), minDistance(boidSize * 1.5f)
 {}
 
+void ParameterManager::pause()
+{
+	paused = !paused;
+}
+
 void ParameterManager::selectVisualRange()
 {
 	selectedParameter = &visualRange;

@@ -1,6 +1,6 @@
 #pragma once
 
-#define DEFAULT_BOIDCOUNT 100
+#define DEFAULT_BOIDCOUNT 10000
 
 #define WIDTH 1200
 #define HEIGHT 800

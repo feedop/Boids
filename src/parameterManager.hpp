@@ -7,6 +7,8 @@
 class ParameterManager
 {
 private:
+	bool paused = false;
+
 	float visualRange = INITIAL_VISUAL_RANGE;
 	float separationFactor = INITIAL_SEPARATION_FACTOR;
 	float cohesionFactor = INITIAL_COHESION_FACTOR;
@@ -22,6 +24,8 @@ public:
 	const float minDistance;
 
 	ParameterManager(const int boidCount);
+
+	void pause();
 
 	void incrementParameter();
 	void decrementParameter();
@@ -54,5 +58,10 @@ public:
 	std::string getSelectedName() const
 	{
 		return selectedName;
+	}
+
+	bool getPauseStatus() const
+	{
+		return paused;
 	}
 };
