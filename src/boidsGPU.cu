@@ -20,6 +20,7 @@ namespace GPU
 		return sqrtf(x * x + y * y);
 	}
 
+	// Calculate triangle vertex position by using boids' positions and their velocity vectors
 	__device__ void createTrianglesFromPosition(const int id, float* devVBO, float X, float Y, float DX, float DY, const float boidSize)
 	{
 		float sizeCoefficient = boidSize / distance(DX, DY);
@@ -34,6 +35,7 @@ namespace GPU
 		devVBO[6 * id + 5] = Y - sizeCoefficient * DY - sizeCoefficient * DX;
 	}
 
+	// Set up random generator
 	__global__ void setupCurandStatesKernel(curandState* states, const unsigned long seed, const int boidCount)
 	{
 		int id = blockIdx.x * blockDim.x + threadIdx.x;
@@ -42,6 +44,7 @@ namespace GPU
 		curand_init(seed, id, 0, &states[id]);
 	}
 
+	// Generate random positions and velocities at the beginning
 	__global__ void generateRandomPositionsKernel(curandState* states, float* boidX, float* boidY, float* boidDX, float* boidDY, const int boidCount)
 	{
 		int id = blockIdx.x * blockDim.x + threadIdx.x;
@@ -61,6 +64,7 @@ namespace GPU
 		float moveX = 0;
 		float moveY = 0;
 
+		// Look at all nearby boids, that are close enough
 		for (int i = 0; i < boidCount; i++)
 		{
 			float neighborX = boidX[i];
@@ -68,10 +72,12 @@ namespace GPU
 
 			if (distance(X - neighborX, Y - neighborY) < minDistance)
 			{
+				// Steer away from a neraby boid
 				moveX += X - neighborX;
 				moveY += Y - neighborY;
 			}
 		}
+		// Update our velocity
 		DX += moveX * separationFactor;
 		DY += moveY * separationFactor;
 	}
@@ -274,7 +280,6 @@ namespace GPU
 
 		// Generate random positions and velocity vectors
 		float* devVBO = 0;
-		size_t numBytes;
 		
 		generateRandomPositionsKernel << <blocks, threadsPerBlock >> > (devStates, boidX, boidY, boidDX, boidDY, boidCount);
 

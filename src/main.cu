@@ -1,4 +1,6 @@
-﻿#include "cuda_runtime.h"
+﻿#pragma warning(suppress:4984)
+
+#include "cuda_runtime.h"
 #include "device_launch_parameters.h"
 
 #include "boidsGPU.cuh"
@@ -173,8 +175,6 @@ void eventLoop(GLFWwindow* window, const int boidCount)
 
     // Initialize vertex buffer
     GLuint VAO, VBO;
-
-
     // Boid positions
     float* boidX = 0;
     float* boidY = 0;
@@ -202,7 +202,6 @@ void eventLoop(GLFWwindow* window, const int boidCount)
 
     double lastTime = glfwGetTime();
     int frameCount = 0;
-    int seconds = 0;
 
     ParameterManager parameterManager(boidCount);
 
@@ -296,10 +295,11 @@ void eventLoop(GLFWwindow* window, const int boidCount)
     glDeleteProgram(shaderProgram);
 }
 
+// Manage keyboard input
 void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
     ParameterManager* parameterManager = static_cast<ParameterManager*>(glfwGetWindowUserPointer(window));
-    if (action == GLFW_PRESS)
+    if (action == GLFW_PRESS || action == GLFW_REPEAT)
     {
         switch (key)
         {

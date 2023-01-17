@@ -35,7 +35,7 @@ std::string getFileContent(const char* filename)
     throw std::system_error(errno, std::generic_category(), filename);
 }
 
-// Read a shader, compile it adn return its id
+// Read a shader, compile it and return its id
 GLuint createShader(GLuint type, const std::string source)
 {
     const char* source_cstr = source.c_str();
