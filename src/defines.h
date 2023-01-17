@@ -1,0 +1,41 @@
+#pragma once
+
+#define DEFAULT_BOIDCOUNT 10000
+
+#define WIDTH 1200
+#define HEIGHT 800
+
+#define VERT_FILE "Shaders/default.vert"
+#define FRAG_FILE "Shaders/default.frag"
+
+#define MARGIN 0.03f
+#define TURN_FACTOR 0.002f
+
+#define STEPS 20
+
+#define BOID_SIZE_THRESHHOLD 800
+#define SMALL_BOID_SIZE 0.005f
+#define LARGE_BOID_SIZE 0.02f
+
+#define VISUAL_RANGE_NAME "Visual Range"
+#define MIN_VISUAL_RANGE 0.05f
+#define INITIAL_VISUAL_RANGE 0.2f
+#define MAX_VISUAL_RANGE 0.6f
+
+#define SEPARATION_FACTOR_NAME "Separation Factor"
+#define MIN_SEPARATION_FACTOR 0.005f
+#define INITIAL_SEPARATION_FACTOR 0.05f
+#define MAX_SEPARATION_FACTOR 0.15f
+
+#define COHESION_FACTOR_NAME "Cohesion Factor"
+#define MIN_COHESION_FACTOR 0.0001f
+#define INITIAL_COHESION_FACTOR 0.0005f
+#define MAX_COHESION_FACTOR 0.005f
+
+#define ALIGNMENT_FACTOR_NAME "Alignment Factor"
+#define MIN_ALIGNMENT_FACTOR 0.001f
+#define INITIAL_ALIGNMENT_FACTOR 0.015f
+#define MAX_ALIGNMENT_FACTOR 0.03f
+
+#define MIN_SPEED 0.004f
+#define MAX_SPEED 0.015f
