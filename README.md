@@ -31,3 +31,11 @@ to select the parameter to change. Next, use the arrow keys to increase/decrease
 There are always lower and upper bounds for these factors.
 
 Press space to pause/unpause the simulation.
+
+## Video example
+
+https://user-images.githubusercontent.com/110346745/223789945-c0c6ae17-5667-401c-ac63-67e0ae7f2af3.mp4
+
+## Note regarding the CPU implementation
+The CPU version code definitely could have been written in a much cleaner way. However, for ease of comparison to the GPU alorithm
+I decided to simply copy & paste fragments of the GPU code and wrap them in for loops.
