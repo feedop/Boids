@@ -29,3 +29,5 @@ To change the parameters, **the OpenGL window should be focused**. Firstly, use 
 (corresponding to "Visual range", "Separation factor", "Cohesion Factor" and "Alignment Factor respectively)
 to select the parameter to change. Next, use the arrow keys to increase/decrease the selected parameter.
 There are always lower and upper bounds for these factors.
+
+Press space to pause/unpause the simulation.
