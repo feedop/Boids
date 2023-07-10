@@ -68,6 +68,7 @@
     <CudaCompile>
       <TargetMachinePlatform>64</TargetMachinePlatform>
       <Include>$(SolutionDir)Libraries\include</Include>
+      <AdditionalOptions>-std=c++17 -Xcompiler "/std:c++17" %(AdditionalOptions)</AdditionalOptions>
     </CudaCompile>
     <CudaLink>
       <AdditionalLibraryDirectories>$(CudaToolkitBinDir)/crt;$(SolutionDir)Libraries\lib</AdditionalLibraryDirectories>
@@ -95,6 +96,7 @@
     <CudaCompile>
       <TargetMachinePlatform>64</TargetMachinePlatform>
       <Include>$(SolutionDir)Libraries\include</Include>
+      <AdditionalOptions>-std=c++17 -Xcompiler "/std:c++17" %(AdditionalOptions)</AdditionalOptions>
     </CudaCompile>
     <CudaLink>
       <AdditionalLibraryDirectories>$(CudaToolkitBinDir)/crt;$(SolutionDir)Libraries\lib</AdditionalLibraryDirectories>

@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <random>
+#include <vector>
 
 #define GLFW_INCLUDE_NONE
 #include <glad/glad.h>
@@ -33,6 +34,7 @@ namespace CPU
 		glBufferSubData(GL_ARRAY_BUFFER, 0, 6 * boidCount * sizeof(float), cpuVBO);
 	}
 
+	// Ugly code but it makes reusing the cuda code on CPU easier
 	void initializeBoidLists(float** cpuVBO, float** boidX, float** boidY, float** boidDX, float** boidDY, const int boidCount)
 	{
 		*cpuVBO = new float[6 * boidCount];
@@ -119,8 +121,8 @@ namespace CPU
 	// 3. Match velocity to the average of nearby boids
 	void alignment(float* boidX, float* boidY, float* boidDX, float* boidDY, const int boidCount, float visualRange, float alignmentFactor)
 	{
-		float* tempDX = new float[boidCount]();
-		float* tempDY = new float[boidCount]();
+		std::vector<float> tempDX(boidCount);
+		std::vector<float> tempDY(boidCount);
 
 		for (int i = 0; i < boidCount; i++)
 		{
@@ -160,9 +162,6 @@ namespace CPU
 			boidDX[i] += tempDX[i];
 			boidDY[i] += tempDY[i];
 		}
-
-		delete[] tempDX;
-		delete[] tempDY;
 	}
 
 	// Make boids unable to go arbitrarily fast
@@ -208,6 +207,7 @@ namespace CPU
 		}
 	}
 
+	// In normal code these parameters would be std::vector, but I've decided to keep the raw pointers in order to reuse the cuda code
 	void calculatePositions(float* cpuVBO, float* boidX, float* boidY, float* boidDX, float* boidDY, const int boidCount, const ParameterManager& parameterManager)
 	{
 		float visualRange = parameterManager.getVisualRange();
