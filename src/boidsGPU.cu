@@ -15,9 +15,15 @@
 
 namespace GPU
 {
+	
+	__device__ inline float distanceSquared(const float x, const float y)
+	{
+		return x * x + y * y;
+	}
+
 	__device__ inline float distance(const float x, const float y)
 	{
-		return sqrtf(x * x + y * y);
+		return sqrtf(distanceSquared(x, y));
 	}
 
 	// Calculate triangle vertex position by using boids' positions and their velocity vectors
@@ -70,7 +76,7 @@ namespace GPU
 			float neighborX = boidX[i];
 			float neighborY = boidY[i];
 
-			if (distance(X - neighborX, Y - neighborY) < minDistance)
+			if (distanceSquared(X - neighborX, Y - neighborY) < minDistance * minDistance)
 			{
 				// Steer away from a neraby boid
 				moveX += X - neighborX;
@@ -96,7 +102,7 @@ namespace GPU
 			float neighborX = boidX[i];
 			float neighborY = boidY[i];
 
-			if (distance(X - neighborX, Y - neighborY) < visualRange)
+			if (distanceSquared(X - neighborX, Y - neighborY) < visualRange * visualRange)
 			{
 				moveX += neighborX;
 				moveY += neighborY;
@@ -151,8 +157,8 @@ namespace GPU
 			float neighborX = boidX[i];
 			float neighborY = boidY[i];
 
-			float dist = distance(X - neighborX, Y - neighborY);
-			if (dist < visualRange)
+			float distSquared = distanceSquared(X - neighborX, Y - neighborY);
+			if (distSquared < visualRange * visualRange)
 			{
 				avgDX += boidDX[i];
 				avgDY += boidDY[i];
@@ -164,8 +170,8 @@ namespace GPU
 			float neighborX = boidX[i];
 			float neighborY = boidY[i];
 
-			float dist = distance(X - neighborX, Y - neighborY);
-			if (dist < visualRange)
+			float distSquared = distanceSquared(X - neighborX, Y - neighborY);
+			if (distSquared < visualRange * visualRange)
 			{
 				avgDX += boidDX[i];
 				avgDY += boidDY[i];
