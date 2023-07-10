@@ -65,5 +65,5 @@
 ###############################################################################
 # Linguist settings
 ###############################################################################
-Libraries/* linguist-vendored
+Libraries/** linguist-vendored
 src/glad.c linguist-vendored
